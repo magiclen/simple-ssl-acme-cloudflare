@@ -388,32 +388,32 @@ pub fn run(config: Config) -> Result<i32, String> {
                 let mut f = File::create(&config_txt_path).map_err(|e| e.to_string())?;
 
                 f.write_all(br#"[req]
-default_bits = 4096
-prompt = no
-default_md = sha256
-req_extensions = req_ext
+default_bits       = 4096
+prompt             = no
+default_md         = sha256
+req_extensions     = req_ext
 distinguished_name = dn
 
 [dn]
 # *Common Name (e.g. server FQDN or YOUR name)
-CN              =
+CN =
 
 # Locality Name (e.g. YOUR city name)
-L               =
+L =
 
 # State or Province Name
-ST              =
+ST =
 
 # Organization Name (e.g. YOUR company name)
-O               =
+O  =
 
 # Organizational Unit Name (e.g. YOUR section name)
-OU              =
+OU =
 
 # Country Name (ISO 3166-1 alpha-2 code)
-C               =
+C  =
 
-# Email
+# Email Address
 emailAddress    =
 
 [req_ext]
