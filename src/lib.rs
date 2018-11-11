@@ -395,13 +395,26 @@ req_extensions = req_ext
 distinguished_name = dn
 
 [dn]
-C=
-ST=
-L=
-O=
-OU=
-emailAddress=
-CN =
+# *Common Name (e.g. server FQDN or YOUR name)
+CN              =
+
+# Locality Name (e.g. YOUR city name)
+L               =
+
+# State or Province Name
+ST              =
+
+# Organization Name (e.g. YOUR company name)
+O               =
+
+# Organizational Unit Name (e.g. YOUR section name)
+OU              =
+
+# Country Name (ISO 3166-1 alpha-2 code)
+C               =
+
+# Email
+emailAddress    =
 
 [req_ext]
 subjectAltName = @alt_names
