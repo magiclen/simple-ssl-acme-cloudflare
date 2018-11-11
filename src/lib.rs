@@ -399,7 +399,7 @@ distinguished_name = dn
 CN =
 
 # Locality Name (e.g. YOUR city name)
-L =
+L  =
 
 # State or Province Name
 ST =
