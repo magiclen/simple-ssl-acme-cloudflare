@@ -225,7 +225,7 @@ fn execute_one_cf(cmd: &[&str], cwd: &str, cf_key: &str, cf_email: &str) -> Resu
         return Err(error.to_string());
     }
 
-    let process = Exec::cmd(cmd[0]).cwd(cwd).args(&cmd[1..]).env("CF_KEY", cf_key).env("CF_EMAIL", cf_email);
+    let process = Exec::cmd(cmd[0]).cwd(cwd).args(&cmd[1..]).env("CF_key", cf_key).env("CF_Email", cf_email);
 
     match execute_join(process) {
         Ok(es) => {
