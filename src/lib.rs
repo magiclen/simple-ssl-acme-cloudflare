@@ -225,7 +225,7 @@ fn execute_one_cf(cmd: &[&str], cwd: &str, cf_key: &str, cf_email: &str) -> Resu
         return Err(error.to_string());
     }
 
-    let process = Exec::cmd(cmd[0]).cwd(cwd).args(&cmd[1..]).env("CF_key", cf_key).env("CF_Email", cf_email);
+    let process = Exec::cmd(cmd[0]).cwd(cwd).args(&cmd[1..]).env("CF_Key", cf_key).env("CF_Email", cf_email);
 
     match execute_join(process) {
         Ok(es) => {
@@ -288,9 +288,9 @@ pub fn run(config: Config) -> Result<i32, String> {
     let cf_key = match config.cf_key {
         Some(s) => s,
         None => {
-            match env::var("CF_KEY") {
+            match env::var("CF_Key") {
                 Ok(s) => s,
-                Err(_) => return Err("Cannot find CF_KEY".to_string())
+                Err(_) => return Err("Cannot find CF_Key".to_string())
             }
         }
     };
@@ -298,9 +298,9 @@ pub fn run(config: Config) -> Result<i32, String> {
     let cf_email = match config.cf_email {
         Some(s) => s,
         None => {
-            match env::var("CF_EMAIL") {
+            match env::var("CF_Email") {
                 Ok(s) => s,
-                Err(_) => return Err("Cannot find CF_EMAIL".to_string())
+                Err(_) => return Err("Cannot find CF_Email".to_string())
             }
         }
     };
