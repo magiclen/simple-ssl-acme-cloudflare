@@ -485,9 +485,8 @@ ssl_certificate_key "{0}/key"
 ssl_dhparam "{0}/dhparam"
 
 -----Apache-----
-SSLCertificateFile "{0}/crt"
+SSLCertificateFile "{0}/chain"
 SSLCertificateKeyFile "{0}/key"
-SSLCACertificateFile "{0}/ca""
 SSLOpenSSLConfCmd DHParameters "{0}/dhparam""#, output_path.to_str().unwrap());
 
     Ok(0)
