@@ -10,8 +10,9 @@ description= "Simple SSL with ACME and CloudFlare is a tool to simply apply SSL 
 readme = "README.md"
 license = "MIT"
 
-[badges]
-travis-ci = { repository = "magiclen/simple-ssl-acme-cloudflare", branch = "master" }
+[badges.travis-ci]
+repository = "magiclen/simple-ssl-acme-cloudflare"
+branch = "master"
 
 [profile.release]
 panic = "abort"
