@@ -1,7 +1,8 @@
 [package]
 name = "simple-ssl-acme-cloudflare"
-version = "1.0.5"
+version = "1.0.6"
 authors = ["Magic Len <len@magiclen.org>"]
+edition = "2018"
 repository = "https://github.com/magiclen/simple-ssl-acme-cloudflare"
 homepage = "https://magiclen.org/simple-ssl-acme-cloudflare"
 keywords = ["ssl", "certificate", "CloudFlare", "ACME", "https"]

@@ -1,15 +1,15 @@
 #[macro_use]
 extern crate lazy_static;
 extern crate clap;
-extern crate subprocess;
 extern crate dirs;
+extern crate subprocess;
 
 use std::env;
-use std::path::{Path, PathBuf};
-use std::io::{ErrorKind, Write};
 use std::fs::{self, File};
+use std::io::{ErrorKind, Write};
+use std::path::{Path, PathBuf};
 
-use subprocess::{Exec, ExitStatus, PopenError, NullFile};
+use subprocess::{Exec, ExitStatus, NullFile, PopenError};
 
 use clap::{App, Arg};
 
@@ -130,9 +130,7 @@ impl Config {
                     let path = Path::new(path);
 
                     let path = match path.canonicalize() {
-                        Ok(path) => {
-                            path
-                        }
+                        Ok(path) => path,
                         Err(_) => {
                             return Err(format!("{} is incorrect.", name));
                         }
@@ -190,22 +188,31 @@ fn check_executable(cmd: &[&str]) -> Result<(), ()> {
                 Err(())
             }
         }
-        Err(_) => Err(())
+        Err(_) => Err(()),
     }
 }
 
-fn execute_three_string(cmd1: &[&str], cmd2: &[&str], cmd3: &[&str], cwd: &str) -> Result<String, String> {
+fn execute_three_string(
+    cmd1: &[&str],
+    cmd2: &[&str],
+    cmd3: &[&str],
+    cwd: &str,
+) -> Result<String, String> {
     if let Err(error) = fs::create_dir_all(cwd) {
         return Err(error.to_string());
     }
 
-    let process = { Exec::cmd(cmd1[0]).cwd(cwd).args(&cmd1[1..]) | Exec::cmd(cmd2[0]).cwd(cwd).args(&cmd2[1..]) | Exec::cmd(cmd3[0]).cwd(cwd).args(&cmd3[1..]) };
+    let process = {
+        Exec::cmd(cmd1[0]).cwd(cwd).args(&cmd1[1..])
+            | Exec::cmd(cmd2[0]).cwd(cwd).args(&cmd2[1..])
+            | Exec::cmd(cmd3[0]).cwd(cwd).args(&cmd3[1..])
+    };
 
     match process.capture() {
         Ok(c) => {
             let es = match c.exit_status {
                 ExitStatus::Exited(c) => c as i32,
-                ExitStatus::Signaled(c) => c as i32,
+                ExitStatus::Signaled(c) => i32::from(c),
                 ExitStatus::Other(c) => c,
                 _ => -1,
             };
@@ -216,7 +223,7 @@ fn execute_three_string(cmd1: &[&str], cmd2: &[&str], cmd3: &[&str], cwd: &str) 
 
             Ok(c.stdout_str())
         }
-        Err(error) => Err(error.to_string())
+        Err(error) => Err(error.to_string()),
     }
 }
 
@@ -225,7 +232,8 @@ fn execute_one_cf(cmd: &[&str], cwd: &str, cf_key: &str, cf_email: &str) -> Resu
         return Err(error.to_string());
     }
 
-    let process = Exec::cmd(cmd[0]).cwd(cwd).args(&cmd[1..]).env("CF_Key", cf_key).env("CF_Email", cf_email);
+    let process =
+        Exec::cmd(cmd[0]).cwd(cwd).args(&cmd[1..]).env("CF_Key", cf_key).env("CF_Email", cf_email);
 
     match execute_join(process) {
         Ok(es) => {
@@ -234,7 +242,7 @@ fn execute_one_cf(cmd: &[&str], cwd: &str, cf_key: &str, cf_email: &str) -> Resu
             }
             Ok(es)
         }
-        Err(error) => Err(error.to_string())
+        Err(error) => Err(error.to_string()),
     }
 }
 
@@ -252,7 +260,7 @@ fn execute_one(cmd: &[&str], cwd: &str) -> Result<i32, String> {
             }
             Ok(es)
         }
-        Err(error) => Err(error.to_string())
+        Err(error) => Err(error.to_string()),
     }
 }
 
@@ -261,14 +269,12 @@ fn execute_join(process: Exec) -> Result<i32, PopenError> {
         Ok(es) => {
             match es {
                 ExitStatus::Exited(c) => Ok(c as i32),
-                ExitStatus::Signaled(c) => Ok(c as i32),
+                ExitStatus::Signaled(c) => Ok(i32::from(c)),
                 ExitStatus::Other(c) => Ok(c),
                 _ => Ok(-1),
             }
         }
-        Err(error) => {
-            Err(error)
-        }
+        Err(error) => Err(error),
     }
 }
 
@@ -277,11 +283,11 @@ fn execute_join(process: Exec) -> Result<i32, PopenError> {
 pub fn run(config: Config) -> Result<i32, String> {
     let paths = config.paths;
 
-    if let Err(_) = check_executable(&vec![paths.openssl_path.as_str(), "version", "-v"]) {
+    if check_executable(&[paths.openssl_path.as_str(), "version", "-v"]).is_err() {
         return Err("Cannot find acme.sh".to_string());
     }
 
-    if let Err(_) = check_executable(&vec![paths.acme_path.as_str(), "--version"]) {
+    if check_executable(&[paths.acme_path.as_str(), "--version"]).is_err() {
         return Err("Cannot find acme.sh".to_string());
     }
 
@@ -290,7 +296,7 @@ pub fn run(config: Config) -> Result<i32, String> {
         None => {
             match env::var("CF_Key") {
                 Ok(s) => s,
-                Err(_) => return Err("Cannot find CF_Key".to_string())
+                Err(_) => return Err("Cannot find CF_Key".to_string()),
             }
         }
     };
@@ -300,7 +306,7 @@ pub fn run(config: Config) -> Result<i32, String> {
         None => {
             match env::var("CF_Email") {
                 Ok(s) => s,
-                Err(_) => return Err("Cannot find CF_Email".to_string())
+                Err(_) => return Err("Cannot find CF_Email".to_string()),
             }
         }
     };
@@ -315,12 +321,12 @@ pub fn run(config: Config) -> Result<i32, String> {
             path
         }
         Err(ref error) if error.kind() == ErrorKind::NotFound => {
-            if let Err(_) = fs::create_dir_all(output_path) {
+            if fs::create_dir_all(output_path).is_err() {
                 return Err(format!("{} does not exist and cannot create it.", config.output_path));
             }
             match output_path.canonicalize() {
                 Ok(p) => p,
-                Err(err) => return Err(err.to_string())
+                Err(err) => return Err(err.to_string()),
             }
         }
         Err(_) => {
@@ -339,33 +345,35 @@ pub fn run(config: Config) -> Result<i32, String> {
     let config_txt_path = Path::join(&output_path, "config.txt");
 
     {
-        let generate_dhparam;
-
-        if dhparam_path.exists() {
+        let generate_dhparam = if dhparam_path.exists() {
             if dhparam_path.is_dir() {
                 return Err(format!("{} is a directory.", dhparam_path.to_str().unwrap()));
             }
 
-            generate_dhparam = config.force_dhparam;
+            config.force_dhparam
         } else {
-            generate_dhparam = true;
-        }
+            true
+        };
 
         if generate_dhparam {
             println!("Generating dhparam, please wait for minutes...");
 
-            let cmd = vec![paths.openssl_path.as_str(), "dhparam", "-out", dhparam_path.to_str().unwrap(), "4096"];
+            let cmd = vec![
+                paths.openssl_path.as_str(),
+                "dhparam",
+                "-out",
+                dhparam_path.to_str().unwrap(),
+                "4096",
+            ];
 
-            if let Err(_) = execute_one(&cmd, output_path_str) {
+            if execute_one(&cmd, output_path_str).is_err() {
                 return Err("Cannot generate dhparam.".to_string());
             }
         }
     }
 
     {
-        let generate_csr;
-
-        if csr_path.exists() && key_path.exists() {
+        let generate_csr = if csr_path.exists() && key_path.exists() {
             if csr_path.is_dir() {
                 return Err(format!("{} is a directory.", csr_path.to_str().unwrap()));
             }
@@ -374,10 +382,10 @@ pub fn run(config: Config) -> Result<i32, String> {
                 return Err(format!("{} is a directory.", key_path.to_str().unwrap()));
             }
 
-            generate_csr = config.force_csr_key;
+            config.force_csr_key
         } else {
-            generate_csr = true;
-        }
+            true
+        };
 
         if generate_csr {
             if config_txt_path.exists() {
@@ -387,7 +395,8 @@ pub fn run(config: Config) -> Result<i32, String> {
             } else {
                 let mut f = File::create(&config_txt_path).map_err(|e| e.to_string())?;
 
-                f.write_all(br#"[req]
+                f.write_all(
+                    br#"[req]
 default_bits       = 4096
 prompt             = no
 default_md         = sha256
@@ -420,16 +429,30 @@ emailAddress    =
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 ="#).map_err(|e| e.to_string())?;
+DNS.1 ="#,
+                )
+                .map_err(|e| e.to_string())?;
 
                 println!("Please make your config.txt by using a text editor. For example,");
                 println!("\tvim \"{}\"", config_txt_path.to_str().unwrap());
                 return Ok(1);
             }
 
-            let cmd = vec![paths.openssl_path.as_str(), "req", "-config", config_txt_path.to_str().unwrap(), "-newkey", "rsa:4096", "-out", csr_path.to_str().unwrap(), "-nodes", "-keyout", key_path.to_str().unwrap()];
+            let cmd = vec![
+                paths.openssl_path.as_str(),
+                "req",
+                "-config",
+                config_txt_path.to_str().unwrap(),
+                "-newkey",
+                "rsa:4096",
+                "-out",
+                csr_path.to_str().unwrap(),
+                "-nodes",
+                "-keyout",
+                key_path.to_str().unwrap(),
+            ];
 
-            if let Err(_) = execute_one(&cmd, output_path_str) {
+            if execute_one(&cmd, output_path_str).is_err() {
                 return Err("Is Your config.txt correct?".to_string());
             }
         }
@@ -446,7 +469,7 @@ DNS.1 ="#).map_err(|e| e.to_string())?;
 
         match execute_three_string(&cmd1, &cmd2, &cmd3, output_path_str) {
             Ok(s) => s,
-            Err(_) => return Err("Is Your CSR correct?".to_string())
+            Err(_) => return Err("Is Your CSR correct?".to_string()),
         }
     };
 
@@ -455,30 +478,50 @@ DNS.1 ="#).map_err(|e| e.to_string())?;
     let domain_path = Path::join(&Path::new(&paths.acme_path).parent().unwrap(), domain);
 
     {
-        if let Err(_) = fs::remove_dir_all(&domain_path) {
+        if fs::remove_dir_all(&domain_path).is_err() {
             // do nothing
         }
     }
 
     {
-        let cmd = vec![paths.acme_path.as_str(), "--signcsr", "--csr", csr_path.to_str().unwrap(), "--dns", "dns_cf", "--force"];
+        let cmd = vec![
+            paths.acme_path.as_str(),
+            "--signcsr",
+            "--csr",
+            csr_path.to_str().unwrap(),
+            "--dns",
+            "dns_cf",
+            "--force",
+        ];
 
-        if let Err(_) = execute_one_cf(&cmd, output_path_str, &cf_key, &cf_email) {
+        if execute_one_cf(&cmd, output_path_str, &cf_key, &cf_email).is_err() {
             return Err("Cannot apply your ssl certificate.".to_string());
         }
     }
 
     {
-        let cmd = vec![paths.acme_path.as_str(), "--installcert", "--cert-file", crt_path.to_str().unwrap(), "--ca-file", ca_path.to_str().unwrap(), "--fullchain-file", chain_path.to_str().unwrap(), "-d", domain];
+        let cmd = vec![
+            paths.acme_path.as_str(),
+            "--installcert",
+            "--cert-file",
+            crt_path.to_str().unwrap(),
+            "--ca-file",
+            ca_path.to_str().unwrap(),
+            "--fullchain-file",
+            chain_path.to_str().unwrap(),
+            "-d",
+            domain,
+        ];
 
-        if let Err(_) = execute_one(&cmd, output_path_str) {
+        if execute_one(&cmd, output_path_str).is_err() {
             return Err("Cannot install your ssl certificate.".to_string());
         }
     }
 
     println!("Your new ssl certificate has been applied and installed successfully.");
 
-    println!(r#"
+    println!(
+        r#"
 -----Nginx-----
 ssl_certificate "{0}/chain"
 ssl_certificate_key "{0}/key"
@@ -487,7 +530,9 @@ ssl_dhparam "{0}/dhparam"
 -----Apache-----
 SSLCertificateFile "{0}/chain"
 SSLCertificateKeyFile "{0}/key"
-SSLOpenSSLConfCmd DHParameters "{0}/dhparam""#, output_path.to_str().unwrap());
+SSLOpenSSLConfCmd DHParameters "{0}/dhparam""#,
+        output_path.to_str().unwrap()
+    );
 
     Ok(0)
 }
