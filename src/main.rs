@@ -13,7 +13,7 @@ use std::env;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
-use std::process::{self, Command, Stdio};
+use std::process::{self, Stdio};
 
 use clap::{App, Arg};
 use terminal_size::terminal_size;
@@ -93,15 +93,11 @@ fn main() -> Result<(), String> {
     let force_csr_key = matches.is_present("FORCE_CSR_KEY");
     let force_dhparam = matches.is_present("FORCE_DHPARAM");
 
-    if Command::new(openssl_path)
-        .args(&["version", "-v"])
-        .execute_check_exit_status_code(0)
-        .is_err()
-    {
+    if command_args!(openssl_path, "version", "-v").execute_check_exit_status_code(0).is_err() {
         return Err(String::from("Cannot find openssl."));
     }
 
-    if Command::new(acme_path).args(&["--version"]).execute_check_exit_status_code(0).is_err() {
+    if command_args!(acme_path, "--version").execute_check_exit_status_code(0).is_err() {
         return Err(String::from("Cannot find acme.sh."));
     }
 
@@ -155,11 +151,8 @@ fn main() -> Result<(), String> {
     if generate_dhparam {
         println!("Generating dhparam, please wait for minutes...");
 
-        let mut command = Command::new(openssl_path);
-
-        command.args(&["dhparam", "-dsaparam", "-out"]);
-        command.arg(dhparam_path);
-        command.arg("4096");
+        let mut command =
+            command_args!(openssl_path, "dhparam", "-dsaparam", "-out", dhparam_path, "4096");
 
         let output = command.execute_output().map_err(|err| err.to_string())?;
 
@@ -294,14 +287,19 @@ DNS.1 ="#,
             return Ok(());
         }
 
-        let mut command = Command::new(openssl_path);
-
-        command.args(&["req", "-config"]);
-        command.arg(config_txt_path);
-        command.args(&["-newkey", "rsa:4096", "-out"]);
-        command.arg(csr_path.as_path());
-        command.args(&["-nodes", "-keyout"]);
-        command.arg(key_path);
+        let mut command = command_args!(
+            openssl_path,
+            "req",
+            "-config",
+            config_txt_path,
+            "-newkey",
+            "rsa:4096",
+            "-out",
+            csr_path.as_path(),
+            "-nodes",
+            "-keyout",
+            key_path
+        );
 
         let output = command.execute_output().map_err(|err| err.to_string())?;
 
@@ -320,9 +318,7 @@ DNS.1 ="#,
     println!("Applying your ssl certificate...");
 
     let domain = {
-        let mut command1 = Command::new(acme_path);
-        command1.args(&["--showcsr", "--csr"]).arg(csr_path.as_path());
-
+        let mut command1 = command_args!(acme_path, "--showcsr", "--csr", csr_path.as_path());
         let mut command2 = command!("head -n 1");
         let mut command3 = command!("cut -d '=' -f 2");
 
@@ -354,11 +350,16 @@ DNS.1 ="#,
         // do nothing
     }
 
-    let mut command = Command::new(acme_path);
+    let mut command = command_args!(
+        acme_path,
+        "--signcsr",
+        "--csr",
+        csr_path.as_path(),
+        "--dns",
+        "dns_cf",
+        "--force"
+    );
     command.env("CF_Key", cf_key.as_ref()).env("CF_Email", cf_email.as_ref());
-    command.args(&["--signcsr", "--csr"]);
-    command.arg(csr_path.as_path());
-    command.args(&["--dns", "dns_cf", "--force"]);
 
     let output = command.execute_output().map_err(|err| err.to_string())?;
 
@@ -373,15 +374,18 @@ DNS.1 ="#,
         }
     }
 
-    let mut command = Command::new(acme_path);
-    command.args(&["--installcert", "--cert-file"]);
-    command.arg(crt_path);
-    command.arg("--ca-file");
-    command.arg(ca_path);
-    command.arg("--fullchain-file");
-    command.arg(chain_path);
-    command.arg("-d");
-    command.arg(domain);
+    let mut command = command_args!(
+        acme_path,
+        "--installcert",
+        "--cert-file",
+        crt_path,
+        "--ca-file",
+        ca_path,
+        "--fullchain-file",
+        chain_path,
+        "-d",
+        domain
+    );
 
     let output = command.execute_output().map_err(|err| err.to_string())?;
 
