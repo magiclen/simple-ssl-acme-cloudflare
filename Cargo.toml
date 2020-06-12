@@ -26,5 +26,5 @@ terminal_size = "0.1"
 execute = "0.2.4"
 
 [dependencies.path-absolutize]
-version = "2"
+version = "3"
 features = ["lazy_static_cache"]
