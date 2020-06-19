@@ -10,6 +10,7 @@ extern crate path_absolutize;
 
 use std::borrow::Cow;
 use std::env;
+use std::error::Error;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
@@ -29,7 +30,7 @@ const DEFAULT_OPENSSL_PATH: &str = "openssl";
 const DEFAULT_ACME_PATH: &str = "acme.sh";
 const DEFAULT_OUTPUT_PATH: &str = "ssl";
 
-fn main() -> Result<(), String> {
+fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new(APP_NAME)
         .set_term_width(terminal_size().map(|(width, _)| width.0 as usize).unwrap_or(0))
         .version(CARGO_PKG_VERSION)
@@ -94,21 +95,21 @@ fn main() -> Result<(), String> {
     let force_dhparam = matches.is_present("FORCE_DHPARAM");
 
     if command_args!(openssl_path, "version", "-v").execute_check_exit_status_code(0).is_err() {
-        return Err(String::from("Cannot find openssl."));
+        return Err("Cannot find openssl.".into());
     }
 
     if command_args!(acme_path, "--version").execute_check_exit_status_code(0).is_err() {
-        return Err(String::from("Cannot find acme.sh."));
+        return Err("Cannot find acme.sh.".into());
     }
 
     let cf_key = match cf_key {
         Some(s) => Cow::from(s),
-        None => Cow::from(env::var("CF_Key").map_err(|_| String::from("Cannot find CF_Key."))?),
+        None => Cow::from(env::var("CF_Key").map_err(|_| "Cannot find CF_Key.")?),
     };
 
     let cf_email = match cf_email {
         Some(s) => Cow::from(s),
-        None => Cow::from(env::var("CF_Email").map_err(|_| String::from("Cannot find CF_Email."))?),
+        None => Cow::from(env::var("CF_Email").map_err(|_| "Cannot find CF_Email.")?),
     };
 
     let output_path = Path::new(output_path);
@@ -118,12 +119,13 @@ fn main() -> Result<(), String> {
             if !metadata.is_dir() {
                 return Err(format!(
                     "{} exists and it is not a directory.",
-                    output_path.absolutize().map_err(|err| err.to_string())?.to_string_lossy()
-                ));
+                    output_path.absolutize()?.to_string_lossy()
+                )
+                .into());
             }
         }
         Err(_) => {
-            fs::create_dir_all(output_path).map_err(|err| err.to_string())?;
+            fs::create_dir_all(output_path)?;
         }
     }
 
@@ -137,10 +139,9 @@ fn main() -> Result<(), String> {
 
     let generate_dhparam = if dhparam_path.exists() {
         if !dhparam_path.is_file() {
-            return Err(format!(
-                "{} is not a file.",
-                dhparam_path.absolutize().map_err(|err| err.to_string())?.to_string_lossy()
-            ));
+            return Err(
+                format!("{} is not a file.", dhparam_path.absolutize()?.to_string_lossy()).into()
+            );
         }
 
         force_dhparam
@@ -154,12 +155,12 @@ fn main() -> Result<(), String> {
         let mut command =
             command_args!(openssl_path, "dhparam", "-dsaparam", "-out", dhparam_path, "4096");
 
-        let output = command.execute_output().map_err(|err| err.to_string())?;
+        let output = command.execute_output()?;
 
         match output.status.code() {
             Some(exit_code) => {
                 if exit_code != 0 {
-                    return Err(String::from("Cannot generate dhparam."));
+                    return Err("Cannot generate dhparam.".into());
                 }
             }
             None => {
@@ -180,15 +181,13 @@ fn main() -> Result<(), String> {
                 if !metadata.is_file() {
                     return Err(format!(
                         "{} is a directory.",
-                        config_txt_path
-                            .absolutize()
-                            .map_err(|err| err.to_string())?
-                            .to_string_lossy()
-                    ));
+                        config_txt_path.absolutize()?.to_string_lossy()
+                    )
+                    .into());
                 }
             }
             Err(_) => {
-                let mut f = File::create(config_txt_path.as_path()).map_err(|e| e.to_string())?;
+                let mut f = File::create(config_txt_path.as_path())?;
 
                 f.write_all(
                     b"[req]
@@ -225,8 +224,7 @@ subjectAltName = @alt_names
 
 [alt_names]
 DNS.1 =",
-                )
-                .map_err(|e| e.to_string())?;
+                )?;
 
                 println!("Please make your config.txt by using a text editor. For example,");
                 println!("\tvim \"{}\"", config_txt_path.to_str().unwrap());
@@ -236,10 +234,10 @@ DNS.1 =",
         }
         if !config_txt_path.is_file() {
             if config_txt_path.is_dir() {
-                return Err(format!("{} is a directory.", config_txt_path.to_str().unwrap()));
+                return Err(format!("{} is a directory.", config_txt_path.to_str().unwrap()).into());
             }
         } else {
-            let mut f = File::create(&config_txt_path).map_err(|e| e.to_string())?;
+            let mut f = File::create(&config_txt_path)?;
 
             f.write_all(
                 br#"[req]
@@ -276,14 +274,10 @@ subjectAltName = @alt_names
 
 [alt_names]
 DNS.1 ="#,
-            )
-            .map_err(|e| e.to_string())?;
+            )?;
 
             println!("Please make your config.txt by using a text editor. For example,");
-            println!(
-                "\tvim \"{}\"",
-                config_txt_path.absolutize().map_err(|err| err.to_string())?.to_string_lossy()
-            );
+            println!("\tvim \"{}\"", config_txt_path.absolutize()?.to_string_lossy());
             return Ok(());
         }
 
@@ -301,12 +295,12 @@ DNS.1 ="#,
             key_path
         );
 
-        let output = command.execute_output().map_err(|err| err.to_string())?;
+        let output = command.execute_output()?;
 
         match output.status.code() {
             Some(exit_code) => {
                 if exit_code != 0 {
-                    return Err(String::from("Is Your config.txt correct?"));
+                    return Err("Is Your config.txt correct?".into());
                 }
             }
             None => {
@@ -324,14 +318,12 @@ DNS.1 ="#,
 
         command3.stdout(Stdio::piped());
 
-        let output = command1
-            .execute_multiple_output(&mut [&mut command2, &mut command3])
-            .map_err(|err| err.to_string())?;
+        let output = command1.execute_multiple_output(&mut [&mut command2, &mut command3])?;
 
         match output.status.code() {
             Some(exit_code) => {
                 if exit_code != 0 {
-                    return Err(String::from("Is Your CSR correct?"));
+                    return Err("Is Your CSR correct?".into());
                 } else {
                     unsafe { String::from_utf8_unchecked(output.stdout) }
                 }
@@ -361,12 +353,12 @@ DNS.1 ="#,
     );
     command.env("CF_Key", cf_key.as_ref()).env("CF_Email", cf_email.as_ref());
 
-    let output = command.execute_output().map_err(|err| err.to_string())?;
+    let output = command.execute_output()?;
 
     match output.status.code() {
         Some(exit_code) => {
             if exit_code != 0 {
-                return Err(String::from("Cannot apply your ssl certificate."));
+                return Err("Cannot apply your ssl certificate.".into());
             }
         }
         None => {
@@ -387,12 +379,12 @@ DNS.1 ="#,
         domain
     );
 
-    let output = command.execute_output().map_err(|err| err.to_string())?;
+    let output = command.execute_output()?;
 
     match output.status.code() {
         Some(exit_code) => {
             if exit_code != 0 {
-                return Err(String::from("Cannot install your ssl certificate."));
+                return Err("Cannot install your ssl certificate.".into());
             }
         }
         None => {
@@ -413,7 +405,7 @@ ssl_dhparam "{0}/dhparam"
 SSLCertificateFile "{0}/chain"
 SSLCertificateKeyFile "{0}/key"
 SSLOpenSSLConfCmd DHParameters "{0}/dhparam""#,
-        output_path.absolutize().map_err(|err| err.to_string())?.to_string_lossy()
+        output_path.absolutize()?.to_string_lossy()
     );
 
     Ok(())
