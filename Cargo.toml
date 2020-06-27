@@ -10,6 +10,7 @@ categories = ["command-line-utilities"]
 description= "Simple SSL with ACME and CloudFlare is a tool to simply apply SSL certificates by using OpenSSL and ACME via CloudFlare DNS."
 readme = "README.md"
 license = "MIT"
+include = ["src/**/*", "Cargo.toml"]
 
 [badges.travis-ci]
 repository = "magiclen/simple-ssl-acme-cloudflare"
