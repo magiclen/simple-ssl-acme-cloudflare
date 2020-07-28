@@ -1,22 +1,24 @@
 [package]
 name = "simple-ssl-acme-cloudflare"
-version = "1.0.9"
+version = "1.0.10"
 authors = ["Magic Len <len@magiclen.org>"]
 edition = "2018"
 repository = "https://github.com/magiclen/simple-ssl-acme-cloudflare"
 homepage = "https://magiclen.org/simple-ssl-acme-cloudflare"
 keywords = ["ssl", "certificate", "CloudFlare", "ACME", "https"]
 categories = ["command-line-utilities"]
-description= "Simple SSL with ACME and CloudFlare is a tool to simply apply SSL certificates by using OpenSSL and ACME via CloudFlare DNS."
+description = "Simple SSL with ACME and CloudFlare is a tool to simply apply SSL certificates by using OpenSSL and ACME via CloudFlare DNS."
 readme = "README.md"
 license = "MIT"
-include = ["src/**/*", "Cargo.toml"]
+include = ["src/**/*", "Cargo.toml", "README.md", "LICENSE"]
 
 [badges.travis-ci]
 repository = "magiclen/simple-ssl-acme-cloudflare"
 branch = "master"
 
 [profile.release]
+lto = true
+codegen-units = 1
 panic = "abort"
 
 [dependencies]
