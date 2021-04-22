@@ -1,7 +1,7 @@
 Simple SSL with ACME and CloudFlare
 ====================
 
-[![Build Status](https://travis-ci.org/magiclen/simple-ssl-acme-cloudflare.svg?branch=master)](https://travis-ci.org/magiclen/simple-ssl-acme-cloudflare)
+[![CI](https://github.com/magiclen/simple-ssl-acme-cloudflare/actions/workflows/ci.yml/badge.svg)](https://github.com/magiclen/simple-ssl-acme-cloudflare/actions/workflows/ci.yml)
 
 Simple SSL with ACME and CloudFlare is a tool to simply apply SSL certificates by using OpenSSL and ACME via CloudFlare DNS.
 
