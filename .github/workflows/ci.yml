@@ -21,10 +21,6 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - name: Install lzma
-        run: |
-          sudo apt update
-          sudo apt install lzma-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -49,10 +45,6 @@ jobs:
     name: Test ${{ matrix.toolchain }} on ${{ matrix.os }} to ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install lzma
-        run: |
-          sudo apt update
-          sudo apt install lzma-dev musl-tools
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
