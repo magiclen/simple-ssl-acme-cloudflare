@@ -26,4 +26,4 @@ execute = "0.2.4"
 
 [dependencies.path-absolutize]
 version = "3"
-features = ["lazy_static_cache"]
+features = ["once_cell_cache"]
