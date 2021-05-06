@@ -232,54 +232,6 @@ DNS.1 =",
                 return Ok(());
             }
         }
-        if !config_txt_path.is_file() {
-            if config_txt_path.is_dir() {
-                return Err(format!("{} is a directory.", config_txt_path.to_str().unwrap()).into());
-            }
-        } else {
-            let mut f = File::create(&config_txt_path)?;
-
-            f.write_all(
-                br#"[req]
-default_bits       = 4096
-prompt             = no
-default_md         = sha256
-req_extensions     = req_ext
-distinguished_name = dn
-
-[dn]
-# *Common Name (e.g. server FQDN or YOUR name)
-CN =
-
-# Locality Name (e.g. YOUR city name)
-L  =
-
-# State or Province Name
-ST =
-
-# Organization Name (e.g. YOUR company name)
-O  =
-
-# Organizational Unit Name (e.g. YOUR section name)
-OU =
-
-# Country Name (ISO 3166-1 alpha-2 code)
-C  =
-
-# Email Address
-emailAddress    =
-
-[req_ext]
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 ="#,
-            )?;
-
-            println!("Please make your config.txt by using a text editor. For example,");
-            println!("\tvim \"{}\"", config_txt_path.absolutize()?.to_string_lossy());
-            return Ok(());
-        }
 
         let mut command = command_args!(
             openssl_path,

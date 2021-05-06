@@ -1,6 +1,6 @@
 [package]
 name = "simple-ssl-acme-cloudflare"
-version = "1.0.11"
+version = "1.0.12"
 authors = ["Magic Len <len@magiclen.org>"]
 edition = "2018"
 repository = "https://github.com/magiclen/simple-ssl-acme-cloudflare"
