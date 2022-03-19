@@ -1,13 +1,3 @@
-#[macro_use]
-extern crate concat_with;
-extern crate clap;
-extern crate terminal_size;
-
-#[macro_use]
-extern crate execute;
-
-extern crate path_absolutize;
-
 use std::borrow::Cow;
 use std::env;
 use std::error::Error;
@@ -16,10 +6,12 @@ use std::io::Write;
 use std::path::Path;
 use std::process::{self, Stdio};
 
-use clap::{App, Arg};
+use clap::{Arg, Command};
 use terminal_size::terminal_size;
 
-use execute::Execute;
+use concat_with::concat_line;
+
+use execute::{command, command_args, Execute};
 use path_absolutize::Absolutize;
 
 const APP_NAME: &str = "Simple SSL with ACME and CloudFlare";
@@ -31,54 +23,54 @@ const DEFAULT_ACME_PATH: &str = "acme.sh";
 const DEFAULT_OUTPUT_PATH: &str = "ssl";
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let matches = App::new(APP_NAME)
-        .set_term_width(terminal_size().map(|(width, _)| width.0 as usize).unwrap_or(0))
+    let matches = Command::new(APP_NAME)
+        .term_width(terminal_size().map(|(width, _)| width.0 as usize).unwrap_or(0))
         .version(CARGO_PKG_VERSION)
         .author(CARGO_PKG_AUTHORS)
         .about(concat!("Simple SSL with ACME and CloudFlare is a tool to simply apply SSL certificates by using OpenSSL and ACME via CloudFlare DNS.\n\nEXAMPLES:\n", concat_line!(prefix "simple-ssl-acme-cloudflare ",
-                "--cf-email xxx@example.com --cf-key xxxooo                    # Applies a SSL certificate and installs to the ssl folder in the current working directory",
-                "--cf-email xxx@example.com --cf-key xxxooo -o /path/to/folder # Applies a SSL certificate and installs to /path/to/folder",
+                "--cf-email xxx@example.com --cf-key xxxooo                    # Apply a SSL certificate and installs to the ssl folder in the current working directory",
+                "--cf-email xxx@example.com --cf-key xxxooo -o /path/to/folder # Apply a SSL certificate and installs to /path/to/folder",
             )))
-        .arg(Arg::with_name("OPENSSL_PATH")
+        .arg(Arg::new("OPENSSL_PATH")
             .global(true)
             .long("openssl-path")
-            .help("Specifies the path of your openssl executable binary file.")
+            .help("Specify the path of your openssl executable binary file.")
             .takes_value(true)
             .default_value(DEFAULT_OPENSSL_PATH)
         )
-        .arg(Arg::with_name("ACME_PATH")
+        .arg(Arg::new("ACME_PATH")
             .global(true)
             .long("acme-path")
-            .help("Specifies the path of your ACME executable script file.")
+            .help("Specify the path of your ACME executable script file.")
             .takes_value(true)
             .default_value(DEFAULT_ACME_PATH)
         )
-        .arg(Arg::with_name("OUTPUT_PATH")
+        .arg(Arg::new("OUTPUT_PATH")
             .long("output")
-            .short("o")
-            .help("Assigns a destination of your installed certificate files. It should be a folder.")
+            .short('o')
+            .help("Assign a destination of your installed certificate files. It should be a folder.")
             .takes_value(true)
             .default_value(DEFAULT_OUTPUT_PATH)
         )
-        .arg(Arg::with_name("CF_KEY")
+        .arg(Arg::new("CF_KEY")
             .long("cf-key")
-            .short("k")
-            .help("Sets the CloudFlare API key for your domain.")
+            .short('k')
+            .help("Set the CloudFlare API key for your domain.")
             .takes_value(true)
         )
-        .arg(Arg::with_name("CF_EMAIL")
+        .arg(Arg::new("CF_EMAIL")
             .long("cf-email")
-            .short("e")
-            .help("Sets the CloudFlare API email for your domain.")
+            .short('e')
+            .help("Set the CloudFlare API email for your domain.")
             .takes_value(true)
         )
-        .arg(Arg::with_name("FORCE_CSR_KEY")
+        .arg(Arg::new("FORCE_CSR_KEY")
             .long("force-csr-key")
-            .help("Forces to regenerate a new CSR and a new key.")
+            .help("Force to regenerate a new CSR and a new key.")
         )
-        .arg(Arg::with_name("FORCE_DHPARAM")
+        .arg(Arg::new("FORCE_DHPARAM")
             .long("force-dhparam")
-            .help("Forces to regenerate a new dhparam.")
+            .help("Force to regenerate a new dhparam.")
         )
         .after_help("Enjoy it! https://magiclen.org")
         .get_matches();
