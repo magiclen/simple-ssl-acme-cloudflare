@@ -282,7 +282,7 @@ DNS.1 =",
 
     let domain_path = Path::new(acme_path).parent().unwrap().join(domain);
 
-    if fs::remove_dir_all(&domain_path).is_err() {
+    if fs::remove_dir_all(domain_path).is_err() {
         // do nothing
     }
 
