@@ -1,18 +1,18 @@
-use std::borrow::Cow;
-use std::env;
-use std::error::Error;
-use std::fs::{self, File};
-use std::io::Write;
-use std::path::Path;
-use std::process::{self, Stdio};
+use std::{
+    borrow::Cow,
+    env,
+    error::Error,
+    fs::{self, File},
+    io::Write,
+    path::Path,
+    process::{self, Stdio},
+};
 
 use clap::{Arg, Command};
-use terminal_size::terminal_size;
-
 use concat_with::concat_line;
-
 use execute::{command, command_args, Execute};
 use path_absolutize::Absolutize;
+use terminal_size::terminal_size;
 
 const APP_NAME: &str = "Simple SSL with ACME and CloudFlare";
 const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -115,10 +115,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 )
                 .into());
             }
-        }
+        },
         Err(_) => {
             fs::create_dir_all(output_path)?;
-        }
+        },
     }
 
     let dhparam_path = Path::join(output_path, "dhparam");
@@ -154,18 +154,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 if exit_code != 0 {
                     return Err("Cannot generate dhparam.".into());
                 }
-            }
+            },
             None => {
                 process::exit(1);
-            }
+            },
         }
     }
 
-    let generate_csr = if csr_path.is_file() && key_path.is_file() {
-        force_csr_key
-    } else {
-        true
-    };
+    let generate_csr = if csr_path.is_file() && key_path.is_file() { force_csr_key } else { true };
 
     if generate_csr {
         match config_txt_path.metadata() {
@@ -177,7 +173,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     )
                     .into());
                 }
-            }
+            },
             Err(_) => {
                 let mut f = File::create(config_txt_path.as_path())?;
 
@@ -222,7 +218,7 @@ DNS.1 =",
                 println!("\tvim \"{}\"", config_txt_path.to_str().unwrap());
 
                 return Ok(());
-            }
+            },
         }
 
         let mut command = command_args!(
@@ -246,10 +242,10 @@ DNS.1 =",
                 if exit_code != 0 {
                     return Err("Is Your config.txt correct?".into());
                 }
-            }
+            },
             None => {
                 process::exit(1);
-            }
+            },
         }
     }
 
@@ -271,10 +267,10 @@ DNS.1 =",
                 } else {
                     unsafe { String::from_utf8_unchecked(output.stdout) }
                 }
-            }
+            },
             None => {
                 process::exit(1);
-            }
+            },
         }
     };
 
@@ -304,10 +300,10 @@ DNS.1 =",
             if exit_code != 0 {
                 return Err("Cannot apply your ssl certificate.".into());
             }
-        }
+        },
         None => {
             process::exit(1);
-        }
+        },
     }
 
     let mut command = command_args!(
@@ -330,10 +326,10 @@ DNS.1 =",
             if exit_code != 0 {
                 return Err("Cannot install your ssl certificate.".into());
             }
-        }
+        },
         None => {
             process::exit(1);
-        }
+        },
     }
 
     println!("Your new ssl certificate has been applied and installed successfully.");
