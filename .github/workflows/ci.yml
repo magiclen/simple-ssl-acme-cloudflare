@@ -71,5 +71,5 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
-      - run: cargo test --target ${{ matrix.target }} ${{ matrix.features }}
-      - run: cargo doc --target ${{ matrix.target }} ${{ matrix.features }}
+      - run: cargo test ${{ matrix.features }}
+      - run: cargo doc ${{ matrix.features }}
