@@ -9,7 +9,6 @@ homepage = "https://magiclen.org/simple-ssl-acme-cloudflare"
 keywords = ["ssl", "certificate", "CloudFlare", "ACME", "https"]
 categories = ["command-line-utilities"]
 description = "Simple SSL with ACME and CloudFlare is a tool to simply apply SSL certificates by using OpenSSL and ACME via CloudFlare DNS."
-readme = "README.md"
 license = "MIT"
 include = ["src/**/*", "Cargo.toml", "README.md", "LICENSE"]
 
