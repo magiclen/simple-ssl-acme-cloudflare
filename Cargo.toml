@@ -1,9 +1,9 @@
 [package]
 name = "simple-ssl-acme-cloudflare"
-version = "1.0.15"
+version = "1.1.0"
 authors = ["Magic Len <len@magiclen.org>"]
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.70"
 repository = "https://github.com/magiclen/simple-ssl-acme-cloudflare"
 homepage = "https://magiclen.org/simple-ssl-acme-cloudflare"
 keywords = ["ssl", "certificate", "CloudFlare", "ACME", "https"]
@@ -19,12 +19,10 @@ panic = "abort"
 strip = true
 
 [dependencies]
-clap = "3.2.23"
+clap = { version = "4", features = ["derive", "env"] }
 concat-with = "0.2"
-terminal_size = "0.2"
+terminal_size = "0.3"
 
-execute = "0.2.4"
+anyhow = "1"
 
-[dependencies.path-absolutize]
-version = "3"
-features = ["once_cell_cache"]
+execute = "0.2"
