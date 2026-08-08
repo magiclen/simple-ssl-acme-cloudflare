@@ -29,7 +29,7 @@ pub struct CLIArgs {
     #[arg(long)]
     #[arg(default_value = "openssl")]
     #[arg(value_hint = clap::ValueHint::CommandName)]
-    #[arg(help = "Specify the path of your compress executable binary file")]
+    #[arg(help = "Specify the path of your OpenSSL executable binary file")]
     pub openssl_path: String,
 
     #[arg(long)]

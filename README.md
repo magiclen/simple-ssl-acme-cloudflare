@@ -19,7 +19,7 @@ simple-ssl-acme-cloudflare --cf-email xxx@example.com --cf-key xxxooo -o /path/t
 Usage: simple-ssl-acme-cloudflare [OPTIONS]
 
 Options:
-      --openssl-path <OPENSSL_PATH>  Specify the path of your compress executable binary file [default: openssl]
+      --openssl-path <OPENSSL_PATH>  Specify the path of your OpenSSL executable binary file [default: openssl]
       --acme-path <ACME_PATH>        Specify the path of your ACME executable script file [default: acme.sh]
   -o, --output-path <OUTPUT_PATH>    Assign a destination of your installed certificate files. It should be a folder [default: ssl] [aliases: output]
   -k, --cf-key <CF_KEY>              Set the CloudFlare API key for your domain [env: CF_Key=]

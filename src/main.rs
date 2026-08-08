@@ -4,7 +4,12 @@ use std::{fs, io, path::Path, process::Stdio};
 
 use anyhow::{Context, anyhow};
 use cli::*;
-use execute::{Execute, command, command_args};
+use execute::{Execute, command_args};
+
+/// Extracts the domain from the output of `acme.sh --showcsr`, whose first line looks like `subject=example.com`.
+fn parse_domain(showcsr_output: &str) -> Option<&str> {
+    Some(showcsr_output.lines().next()?.split('=').nth(1)?.trim())
+}
 
 fn main() -> anyhow::Result<()> {
     let args = get_args();
@@ -31,7 +36,8 @@ fn main() -> anyhow::Result<()> {
             }
         },
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
-            fs::create_dir_all(args.output_path.as_path())?;
+            fs::create_dir_all(args.output_path.as_path())
+                .with_context(|| anyhow!("{:?}", args.output_path))?;
         },
         Err(error) => return Err(error).with_context(|| anyhow!("{:?}", args.output_path)),
     }
@@ -93,7 +99,7 @@ fn main() -> anyhow::Result<()> {
                             return Err(anyhow!("{key_path:?} is a directory."));
                         }
 
-                        args.force_dhparam
+                        args.force_csr_key
                     },
                     Err(error) if error.kind() == io::ErrorKind::NotFound => true,
                     Err(error) => return Err(error).with_context(|| anyhow!("{key_path:?}")),
@@ -177,7 +183,7 @@ DNS.1 =",
             let output = command.execute_output().with_context(|| anyhow!("{command:?}"))?;
 
             if !output.status.success() {
-                return Err(anyhow!("Is Your config.txt correct?"));
+                return Err(anyhow!("Is your config.txt correct?"));
             }
         }
     }
@@ -185,30 +191,33 @@ DNS.1 =",
     println!("Applying your ssl certificate...");
 
     let domain = {
-        let mut command1 = command_args!(&args.acme_path, "--showcsr", "--csr", csr_path.as_path());
-        let mut command2 = command!("head -n 1");
-        let mut command3 = command!("cut -d '=' -f 2");
+        let mut command = command_args!(&args.acme_path, "--showcsr", "--csr", csr_path.as_path());
 
-        command3.stdout(Stdio::piped());
+        command.stdout(Stdio::piped());
 
-        let output = command1
-            .execute_multiple_output(&mut [&mut command2, &mut command3])
-            .with_context(|| anyhow!("{command1:?} | {command2:?} | {command3:?}"))?;
+        let output = command.execute_output().with_context(|| anyhow!("{command:?}"))?;
 
-        if output.status.success() {
-            unsafe { String::from_utf8_unchecked(output.stdout) }
-        } else {
-            return Err(anyhow!("Is Your CSR correct?"));
+        if !output.status.success() {
+            return Err(anyhow!("Is your CSR correct?"));
+        }
+
+        let stdout = String::from_utf8(output.stdout)
+            .with_context(|| anyhow!("{:?} does not output UTF-8 text.", args.acme_path))?;
+
+        match parse_domain(stdout.as_str()) {
+            Some(domain) if !domain.is_empty() => domain.to_string(),
+            _ => return Err(anyhow!("Cannot read the domain from your CSR.")),
         }
     };
 
-    let domain = domain.trim();
-
     // clear the domain directory
     {
-        let domain_path = Path::new(args.acme_path.as_str()).parent().unwrap().join(domain);
-
-        let _ = fs::remove_dir_all(domain_path);
+        // Only clear it when the home directory of acme.sh can be derived from its path.
+        if let Some(acme_home) =
+            Path::new(args.acme_path.as_str()).parent().filter(|p| !p.as_os_str().is_empty())
+        {
+            let _ = fs::remove_dir_all(acme_home.join(domain.as_str()));
+        }
     }
 
     // apply ssl
@@ -222,9 +231,13 @@ DNS.1 =",
             "dns_cf",
             "--force"
         );
+
+        // Format the command before setting the credentials because the Debug implementation of Command also prints its environment variables.
+        let command_message = format!("{command:?}");
+
         command.env("CF_Key", args.cf_key).env("CF_Email", args.cf_email);
 
-        let output = command.execute_output().with_context(|| anyhow!("{command:?}"))?;
+        let output = command.execute_output().with_context(|| anyhow!("{command_message}"))?;
 
         if !output.status.success() {
             return Err(anyhow!("Cannot apply your ssl certificate."));
@@ -255,19 +268,35 @@ DNS.1 =",
 
     println!("Your new ssl certificate has been applied and installed successfully.");
 
+    let output_path =
+        args.output_path.canonicalize().with_context(|| anyhow!("{:?}", args.output_path))?;
+
     println!(
         r#"
 -----Nginx-----
-ssl_certificate "{0}/chain"
-ssl_certificate_key "{0}/key"
-ssl_dhparam "{0}/dhparam"
+ssl_certificate "{0}/chain";
+ssl_certificate_key "{0}/key";
+ssl_dhparam "{0}/dhparam";
 
 -----Apache-----
 SSLCertificateFile "{0}/chain"
 SSLCertificateKeyFile "{0}/key"
 SSLOpenSSLConfCmd DHParameters "{0}/dhparam""#,
-        args.output_path.canonicalize().unwrap().to_string_lossy()
+        output_path.to_string_lossy()
     );
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_domain_from_showcsr_output() {
+        assert_eq!(
+            Some("example.com"),
+            parse_domain("subject=example.com\ndomains=www.example.com\n")
+        );
+    }
 }
