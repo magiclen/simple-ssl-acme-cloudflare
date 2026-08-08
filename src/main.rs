@@ -2,9 +2,9 @@ mod cli;
 
 use std::{fs, io, path::Path, process::Stdio};
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use cli::*;
-use execute::{command, command_args, Execute};
+use execute::{Execute, command, command_args};
 
 fn main() -> anyhow::Result<()> {
     let args = get_args();
