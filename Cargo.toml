@@ -10,7 +10,7 @@ keywords = ["ssl", "certificate", "CloudFlare", "ACME", "https"]
 categories = ["command-line-utilities"]
 description = "Simple SSL with ACME and CloudFlare is a tool to simply apply SSL certificates by using OpenSSL and ACME via CloudFlare DNS."
 license = "MIT"
-include = ["src/**/*", "Cargo.toml", "README.md", "LICENSE"]
+include = ["src/**/*", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE"]
 
 [profile.release]
 lto = true
